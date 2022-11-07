@@ -21,7 +21,7 @@ function verifyUser(request, response, next) {
     const token = request.headers.authorization.split(' ')[1];
     // this console allows me to grab the token so I can use it to test it in ThunderClient
     // make a request from the client-side, get my token back, then test it in ThunderClient
-    console.log("Token: ", token);
+    console.log('Token: ', token);
     // we get .verify from jwt - it verifies the user
     jwt.verify(token, getKey, {}, valid);
   } catch (error) {

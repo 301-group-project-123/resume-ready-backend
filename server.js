@@ -4,9 +4,10 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
-const verifyUser = require('./auth');
+// const verifyUser = require('./auth');
 const Movie = require('./models/movie.js');
 const cache = require('./cache.js');
+const axios = require('axios');
 
 
 const app = express();
@@ -26,7 +27,7 @@ app.get('/test', (request, response) => {
   response.send('test request received')
 })
 
-app.use(verifyUser);
+// app.use(verifyUser);
 
 
 async function getMovie(request, response, next) {
@@ -69,7 +70,7 @@ async function getMovie(request, response, next) {
 class Showtime {
   constructor(movieObj) {
     this.title = movieObj.title;
-    this.theatre = movieObj.showtimes.theatre.name;
+    this.theatre = movieObj.showtimes[0].theatre.name;
     this.description = movieObj.shortDescription;
     this.dateTime = movieObj.dateTime;
     this.genres = movieObj.genres;
@@ -77,17 +78,17 @@ class Showtime {
   }
 }
 
-
+app.get('/movies', getMovie);
 app.get('/movies', handleGetmovies);
 app.post('/movies', handlePostmovies);
-app.delete('movies', handleDeletemovies);
-app.put('movies', handlePutmovies);
+app.delete('/movies', handleDeletemovies);
+app.put('/movies', handlePutmovies);
 
 
 async function handleGetmovies(req, res) {
   /// 
   try {
-    const moviesFromDb = await Movie.find({ email: req.user.email });
+    const moviesFromDb = await Movie.find();
     res.status(200).send(moviesFromDb);
   } catch (e) {
     console.error(e);
@@ -99,7 +100,7 @@ async function handleGetmovies(req, res) {
 async function handlePostmovies(req, res) {
   try {
     console.log(req.user.email);
-    const newMovie = await Movie.create({ ...req.body, email: req.user.email })
+    const newMovie = await Movie.create({...req.body})
     res.status(200).send(newMovie);
   } catch (e) {
     res.status(500).send('server error');
