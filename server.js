@@ -24,16 +24,16 @@ db.once('open', async _ => {
 });
 
 app.get('/test', (request, response) => {
-  response.send('test request received')
-})
+  response.send('test request received');
+});
 
 // app.use(verifyUser);
 
 
 async function getMovie(request, response, next) {
   try {
-    let zip = request.query.zip;
-    let startDate = request.query.startDate;
+    let zip = 89521;
+    let startDate = '2022-11-11';
     let key = zip + startDate + 'movie';
     if (cache[key] && (Date.now() - cache[key].timestamp < 50000)) {
 
@@ -79,54 +79,58 @@ class Showtime {
 }
 
 app.get('/movies', getMovie);
-app.get('/movies', handleGetmovies);
-app.post('/movies', handlePostmovies);
-app.delete('/movies', handleDeletemovies);
-app.put('/movies', handlePutmovies);
+app.get('/movie', handleGetmovies);
+app.post('/movie', handlePostmovies);
+app.delete('/movie/:movieID', handleDeletemovies);
+app.put('/movie/:movieID', handlePutmovies);
 
 
-async function handleGetmovies(req, res) {
-  /// 
+async function handleGetmovies(req, res, next) {
+  ///
   try {
-    const moviesFromDb = await Movie.find();
+    let moviesFromDb = await Movie.find();
     res.status(200).send(moviesFromDb);
-  } catch (e) {
-    console.error(e);
-    res.status(500).send('server error');
+  } catch (error) {
+    next(error);
   }
 }
 
 
-async function handlePostmovies(req, res) {
+async function handlePostmovies(req, res, next) {
   try {
-    console.log(req.user.email);
-    const newMovie = await Movie.create({...req.body})
+    // console.log(req.user.email);
+    let newMovie = await Movie.create(req.body);
     res.status(200).send(newMovie);
-  } catch (e) {
-    res.status(500).send('server error');
+  } catch (error) {
+    next(error);
   }
 }
 
-async function handleDeletemovies(req, res) {
-  const { id } = req.params;
+async function handleDeletemovies(req, res, next) {
+  let id = req.params.movieID;
 
   try {
     await Movie.findByIdAndDelete(id);
-    res.status(200).send('deleted!')
-  } catch (e) {
-    res.status(500).send('server error');
+    res.status(200).send('deleted!');
+  } catch (error) {
+    next(error);
   }
 }
 
-async function handlePutmovies(req, res) {
-  const { id } = req.params;
+async function handlePutmovies(req, res, next) {
+  let id = req.params.movieID;
+  let data = req.body;
   try {
-    const updatedMovie = await Movie.findByIdAndUpdate(id, { ...req.body, email: req.user.email }, { new: true, overwrite: true });
-    res.status(200).send(updatedMovie);
-  } catch (e) {
-    res.status(500).send('server error');
+    const updatedMovie = await Movie.findByIdAndUpdate(id, data, { new: true, overwrite: true });
+    res.status(201).send(updatedMovie);
+  } catch (error) {
+    next(error);
   }
 }
+
+app.use((error, request, response, next) => {
+  response.status(500).send(error.message);
+});
 
 
 app.listen(PORT, () => console.log(`listening on ${PORT}`));
