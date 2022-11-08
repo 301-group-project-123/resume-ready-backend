@@ -72,7 +72,7 @@ class Showtime {
     this.title = movieObj.title;
     this.theatre = movieObj.showtimes[0].theatre.name;
     this.description = movieObj.shortDescription;
-    this.dateTime = movieObj.dateTime;
+    this.dateTime = movieObj.showtimes[0].dateTime;
     this.genres = movieObj.genres;
     this.poster = movieObj.preferredImage.uri;
   }
