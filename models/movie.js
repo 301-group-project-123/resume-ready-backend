@@ -9,12 +9,12 @@ const { Schema } = mongoose;
 const movieSchema = new Schema({
   title: { type: String, required: true },
   description: { type: String, required: true },
-  email: { type: String, required: false },
+  email:  {type: String},
   status: { type: Boolean, required: false },
   date: { type: String, required: false },
   theatre: { type: String, required: true },
   image: { type: String, required: false },
-  review: { type: String, required: false }
+  review: { type: String, required: false },
 
 });
 
