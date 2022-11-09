@@ -32,8 +32,8 @@ app.get('/test', (request, response) => {
 
 async function getMovie(request, response, next) {
   try {
-    let zip = 89521;
-    let startDate = '2022-11-11';
+    let zip = request.query.zip;
+    let startDate = request.query.startDate;
     let key = zip + startDate + 'movie';
     if (cache[key] && (Date.now() - cache[key].timestamp < 50000)) {
 
