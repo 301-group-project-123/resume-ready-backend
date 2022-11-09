@@ -79,11 +79,11 @@ class Showtime {
 }
 
 app.delete('/movie/:movieID', handleDeletemovies);
-app.put('/movie/:movieID', handlePutmovies);
 app.use(verifyUser);
 app.get('/movies', getMovie);
 app.get('/movie', handleGetmovies);
 app.post('/movie', handlePostmovies);
+app.put('/movie/:movieID', handlePutmovies);
 
 
 async function handleGetmovies(req, res, next) {
@@ -121,9 +121,10 @@ async function handleDeletemovies(req, res, next) {
 
 async function handlePutmovies(req, res, next) {
   let id = req.params.movieID;
-  let data = req.body;
+  let data = req.body.movie;
+  console.log(data);
   try {
-    const updatedMovie = await Movie.findByIdAndUpdate(id, data, {...req.body, email: req.user.email}, { new: true, overwrite: true });
+    const updatedMovie = await Movie.findByIdAndUpdate(id, {...data, email: req.user.email}, { new: true, overwrite: true });
     res.status(201).send(updatedMovie);
   } catch (error) {
     next(error);
