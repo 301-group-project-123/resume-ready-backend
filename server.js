@@ -4,10 +4,11 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
-// const verifyUser = require('./auth');
+const verifyUser = require('./auth');
 const Movie = require('./models/movie.js');
 const cache = require('./cache.js');
 const axios = require('axios');
+const { request } = require('express');
 
 
 const app = express();
@@ -24,10 +25,9 @@ db.once('open', async _ => {
 });
 
 app.get('/test', (request, response) => {
-  response.send('test request received')
-})
+  response.send('test request received');
+});
 
-// app.use(verifyUser);
 
 
 async function getMovie(request, response, next) {
@@ -36,7 +36,7 @@ async function getMovie(request, response, next) {
     let startDate = request.query.startDate;
     let key = zip + startDate + 'movie';
     if (cache[key] && (Date.now() - cache[key].timestamp < 50000)) {
-
+      
       console.log('Cache hit');
       response.status(200).send(cache[key].data);
 
@@ -45,9 +45,9 @@ async function getMovie(request, response, next) {
       let zip = request.query.zip;
       let startDate = request.query.startDate;
       let movieUrl = `http://data.tmsapi.com/v1.1/movies/showings?startDate=${startDate}&zip=${zip}&api_key=${process.env.REACT_APP_MOVIEAPI}`;
-
+      
       let movieData = await axios.get(movieUrl);
-
+      
       let parsedData = movieData.data.map(movie => new Showtime(movie));
 
       // ** ADD API return to CACHE
@@ -55,11 +55,11 @@ async function getMovie(request, response, next) {
         data: parsedData,
         timestamp: Date.now()
       };
-
+      
       response.status(200).send(parsedData);
-
+      
     }
-
+    
   } catch (error) {
     // if I have an error, this will create a new instance of the Error Object that lives in Express
     next(error);
@@ -72,61 +72,68 @@ class Showtime {
     this.title = movieObj.title;
     this.theatre = movieObj.showtimes[0].theatre.name;
     this.description = movieObj.shortDescription;
-    this.dateTime = movieObj.dateTime;
+    this.dateTime = movieObj.showtimes[0].dateTime;
     this.genres = movieObj.genres;
     this.poster = movieObj.preferredImage.uri;
   }
 }
 
+app.delete('/movie/:movieID', handleDeletemovies);
+app.use(verifyUser);
 app.get('/movies', getMovie);
-app.get('/movies', handleGetmovies);
-app.post('/movies', handlePostmovies);
-app.delete('/movies', handleDeletemovies);
-app.put('/movies', handlePutmovies);
+app.get('/movie', handleGetmovies);
+app.post('/movie', handlePostmovies);
+app.put('/movie/:movieID', handlePutmovies);
 
 
-async function handleGetmovies(req, res) {
-  /// 
+async function handleGetmovies(req, res, next) {
+  ///
   try {
-    const moviesFromDb = await Movie.find();
+    let moviesFromDb = await Movie.find({email: req.user.email});
     res.status(200).send(moviesFromDb);
-  } catch (e) {
-    console.error(e);
-    res.status(500).send('server error');
+  } catch (error) {
+    next(error);
   }
 }
 
 
-async function handlePostmovies(req, res) {
+async function handlePostmovies(req, res, next) {
   try {
-    console.log(req.user.email);
-    const newMovie = await Movie.create({...req.body})
+    // console.log(req.user.email);
+    console.log(req.body);
+    let newMovie = await Movie.create({...req.body.movie, email: req.user.email});
     res.status(200).send(newMovie);
-  } catch (e) {
-    res.status(500).send('server error');
+  } catch (error) {
+    next(error);
   }
 }
 
-async function handleDeletemovies(req, res) {
-  const { id } = req.params;
+async function handleDeletemovies(req, res, next) {
+  let id = req.params.movieID;
 
   try {
     await Movie.findByIdAndDelete(id);
-    res.status(200).send('deleted!')
-  } catch (e) {
-    res.status(500).send('server error');
+    res.status(200).send('deleted!');
+  } catch (error) {
+    next(error);
   }
 }
 
-async function handlePutmovies(req, res) {
-  const { id } = req.params;
+async function handlePutmovies(req, res, next) {
+  let id = req.params.movieID;
+  let data = req.body.movie;
+  console.log(data);
   try {
-    const updatedMovie = await Movie.findByIdAndUpdate(id, { ...req.body, email: req.user.email }, { new: true, overwrite: true });
-    res.status(200).send(updatedMovie);
-  } catch (e) {
-    res.status(500).send('server error');
+    const updatedMovie = await Movie.findByIdAndUpdate(id, {...data, email: req.user.email}, { new: true, overwrite: true });
+    res.status(201).send(updatedMovie);
+  } catch (error) {
+    next(error);
   }
 }
+
+app.use((error, request, response, next) => {
+  response.status(500).send(error.message);
+});
 
 
 app.listen(PORT, () => console.log(`listening on ${PORT}`));
