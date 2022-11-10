@@ -11,10 +11,11 @@ const movieSchema = new Schema({
   description: { type: String, required: true },
   email:  {type: String},
   status: { type: Boolean, required: false },
-  date: { type: String, required: false },
+  dateTime: { type: String, required: true },
   theatre: { type: String, required: true },
-  image: { type: String, required: false },
+  poster: { type: String, required: true },
   review: { type: String, required: false },
+
 
 });
 
